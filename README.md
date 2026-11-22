@@ -26,15 +26,6 @@ nicht erforderlich. Änderungen am Quellenstatus können lokal im Browser
 gespeichert werden. Die aktualisierte `projects.json` lässt sich anschließend
 herunterladen und in den Projektordner übernehmen.
 
-Optional kann das Dashboard mit einem lokalen Server geöffnet werden:
-
-```bash
-python3 scripts/dashboard.py
-```
-
-Danach im Browser `http://127.0.0.1:8899` öffnen. Im Servermodus werden
-Statusänderungen direkt in `projects.json` gespeichert.
-
 ## Skripte
 
 Die Skripte liegen in `scripts/` und können aus jedem Arbeitsverzeichnis
