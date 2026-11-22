@@ -116,6 +116,7 @@ const el = (tag, attrs = {}, ...children) => {
   }
   return node;
 };
+const generalizeSource = (value) => String(value ?? "").replace(/\bNfE-Pro\b/g, "Produktsuche");
 const statusClass = (s) => "s-" + s.toLowerCase().replace(/\s+/g, "-");
 const badge = (s) => el("span", { class: "badge " + statusClass(s) }, s);
 const toast = (msg) => { const t = $("#toast"); t.textContent = msg; t.classList.add("show"); setTimeout(() => t.classList.remove("show"), 1800); };
@@ -131,7 +132,7 @@ async function api(path, options) {
 const CSV_NAME = /^([a-z0-9][a-z0-9-]*?)-(\d+)\.csv$/;
 const EDITS_KEY = "hundefutterdb.statusEdits";
 const DEFAULT_REGISTRY = [
-  { id: "nfepro", label: "NfE-Pro", url: "https://www.nfepro.de", optional: false },
+  { id: "nfepro", label: "Produktsuche", url: "", optional: false },
   { id: "opff", label: "Open Pet Food Facts", url: "https://world.openpetfoodfacts.org", optional: false },
   { id: "hersteller", label: "Hersteller-Shop", url: "", optional: false },
   { id: "gs1", label: "GS1 (EAN-Validierung)", url: "https://www.gs1.org/services/verified-by-gs1", optional: true },
@@ -210,7 +211,7 @@ function summarizeLocal(slug, file, parsed, state) {
     const t = r.food_type || "unbekannt";
     foodTypes[t] = (foodTypes[t] || 0) + 1;
     if (nutrientCols.some(c => (r[c] || "").trim())) withAnalysis++;
-    for (const token of (r.source || "").split(";")) {
+    for (const token of generalizeSource(r.source).split(";")) {
       const label = token.replace(/\s*\(.*?\)\s*$/, "").trim();
       if (label) rowSources[label] = (rowSources[label] || 0) + 1;
     }
@@ -408,9 +409,13 @@ function renderPreview() {
       (!t || (r.food_type || "unbekannt") === t) &&
       (!q || preview.columns.some(c => String(r[c] ?? "").toLowerCase().includes(q))));
     count.textContent = `${filtered.length} von ${preview.total} Zeilen` + (preview.truncated ? " (Vorschau gekürzt)" : "");
+    const tableRows = filtered.map(r => el("tr", {}, visibleColumns.map(c => {
+      const value = c === "source" ? generalizeSource(r[c]) : r[c] ?? "";
+      return el("td", { title: value }, value);
+    })));
     wrap.replaceChildren(el("table", { class: "preview" },
       el("thead", {}, el("tr", {}, visibleColumns.map(c => el("th", {}, c)))),
-      el("tbody", {}, filtered.map(r => el("tr", {}, visibleColumns.map(c => el("td", { title: r[c] ?? "" }, r[c] ?? "")))))));
+      el("tbody", {}, tableRows)));
   }
   search.addEventListener("input", draw);
   typeFilter.addEventListener("change", draw);
@@ -433,7 +438,7 @@ function renderDetail() {
       kpi(`${p.with_analysis} / ${p.rows}`, "mit Analysewerten"),
       kpi(p.modified.replace("T", " "), "CSV zuletzt geändert")),
     el("div", { class: "chips" }, el("span", { class: "muted" }, "Zeilen je Quelle:"),
-      Object.entries(p.row_sources).map(([k, v]) => el("span", { class: "chip" }, `${k}: ${v}`))));
+        Object.entries(p.row_sources).map(([k, v]) => el("span", { class: "chip" }, `${generalizeSource(k)}: ${v}`))));
   $("#detail").replaceChildren(header, renderSources(p), renderPreview());
 }
 

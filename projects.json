@@ -2,8 +2,8 @@
   "sources": [
     {
       "id": "nfepro",
-      "label": "NfE-Pro",
-      "url": "https://www.nfepro.de",
+      "label": "Produktsuche",
+      "url": "",
       "optional": false
     },
     {
@@ -31,7 +31,7 @@
       "sources": {
         "nfepro": {
           "status": "erledigt",
-          "note": "6 Sortierungen je Nass- und Trockenfutter, nach EAN dedupliziert",
+          "note": "Suchläufe für Nass- und Trockenfutter, nach EAN zusammengeführt",
           "updated": "2026-11-21T13:30"
         },
         "opff": {
@@ -41,7 +41,7 @@
         },
         "hersteller": {
           "status": "erledigt",
-          "note": "vet-concept.com: Analysewerte + Zutaten für 176/176 (44 per EAN, 132 per Produktfamilie gleichen Futtertyps); NfE-Abgleich 82/82 konsistent",
+          "note": "vet-concept.com: Analysewerte + Zutaten für 176/176 (44 per EAN, 132 per Produktfamilie gleichen Futtertyps); Werteabgleich 82/82 konsistent",
           "updated": "2026-11-21T15:20"
         },
         "gs1": {
@@ -56,7 +56,7 @@
       "sources": {
         "nfepro": {
           "status": "erledigt",
-          "note": "Nass- und Trockenfutter: relevance, popular und newest; nach EAN dedupliziert; 493 EANs gesamt",
+          "note": "Suchläufe für Nass- und Trockenfutter, nach EAN zusammengeführt; 493 Produkte gesamt",
           "updated": "2026-11-22T19:10"
         },
         "opff": {

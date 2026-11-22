@@ -1,8 +1,8 @@
 # Hundefutterdatenbank
 
 Dieses Projekt sammelt und vereinheitlicht öffentlich verfügbare Produktdaten
-für Hundefutter. Die CSV-Dateien verbinden Produkttreffer aus NfE-Pro mit
-Ergänzungen aus Herstellerangaben und Open Pet Food Facts (OPFF). Ein lokales
+für Hundefutter. Die CSV-Dateien verbinden Produkttreffer aus Produktsuchen mit
+Ergänzungen aus Herstellerangaben und offenen Produktdatenbanken. Ein lokales
 Dashboard macht die Daten und den Bearbeitungsstand der Quellen übersichtlich.
 
 ## Datenbestand
@@ -31,26 +31,22 @@ herunterladen und in den Projektordner übernehmen.
 Die Skripte liegen in `scripts/` und können aus jedem Arbeitsverzeichnis
 gestartet werden:
 
-- `nfepro_collect.py`: sammelt eine Marke aus NfE-Pro und führt Treffer nach
-  EAN zusammen. Bei HTTP 429 wird die vom Server angegebene Wartezeit
-  eingehalten.
+- Such- und Exportskripte: sammeln Produkttreffer und führen sie anhand der
+  EAN zusammen.
 - `royalcanin_enrich.py`: ergänzt Royal-Canin-Produkte aus den erlaubten
   Produktseiten des Herstellers.
 - `vetconcept_enrich.py`: ergänzt Vet-Concept-Analysewerte und Zutaten aus
   Herstellerseiten.
 - `opff_match.py`: gleicht Produkt-EANs mit Open Pet Food Facts ab und füllt
   nur leere Felder.
-- `nfepro_export.py`: exportiert eine NfE-Pro-Suche.
 - `update_csv_filename.py`: aktualisiert die Produktanzahl im CSV-Dateinamen.
 - `build_dashboard_data.py`: erzeugt `scripts/dashboard-data.js` aus den
   Projekt-CSV-Dateien und `projects.json`.
 
-Beispiel für eine neue Marke:
-
-```bash
-python3 scripts/nfepro_collect.py --brand "Markenname"
-python3 scripts/opff_match.py --brand "Markenname"
-```
+Für eine neue Marke werden zunächst Produkttreffer gesammelt, danach
+Herstellerangaben ergänzt und die EANs mit offenen Produktdatenbanken
+abgeglichen. Die einzelnen Schritte sind in [Projekt.md](Projekt.md)
+dokumentiert.
 
 Die Herstelleranreicherung wird über das passende Hersteller-Skript ausgeführt.
 Beispiele und Hinweise zu Suchfiltern, Datenquellen, Einschränkungen und dem
@@ -66,8 +62,8 @@ Royal-Canin-Ablauf stehen in [Projekt.md](Projekt.md).
 
 ## Datenquellen und verantwortungsvolle Nutzung
 
-Die Sammlung nutzt NfE-Pro, die jeweiligen Herstellerseiten und Open Pet Food
-Facts. Verfügbarkeitsgrenzen und Servervorgaben werden respektiert; es werden
-keine Zugangssperren oder Bot-Schutzmaßnahmen umgangen. Für Details zu
+Die Sammlung nutzt öffentliche Produktsuchen, Herstellerseiten und offene
+Produktdatenbanken. Verfügbarkeitsgrenzen und Servervorgaben werden respektiert;
+es werden keine Zugangssperren oder Bot-Schutzmaßnahmen umgangen. Für Details zu
 Abdeckung, Nutzungsbedingungen und bekannten Einschränkungen siehe
 [Projekt.md](Projekt.md).
