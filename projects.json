@@ -1,0 +1,80 @@
+{
+  "sources": [
+    {
+      "id": "nfepro",
+      "label": "NfE-Pro",
+      "url": "https://www.nfepro.de",
+      "optional": false
+    },
+    {
+      "id": "opff",
+      "label": "Open Pet Food Facts",
+      "url": "https://world.openpetfoodfacts.org",
+      "optional": false
+    },
+    {
+      "id": "hersteller",
+      "label": "Hersteller-Shop",
+      "url": "https://www.vet-concept.com",
+      "optional": false
+    },
+    {
+      "id": "gs1",
+      "label": "GS1 (EAN-Validierung)",
+      "url": "https://www.gs1.org/services/verified-by-gs1",
+      "optional": true
+    }
+  ],
+  "projects": {
+    "vet-concept": {
+      "brand": "Vet-Concept",
+      "sources": {
+        "nfepro": {
+          "status": "erledigt",
+          "note": "6 Sortierungen je Nass- und Trockenfutter, nach EAN dedupliziert",
+          "updated": "2026-11-21T13:30"
+        },
+        "opff": {
+          "status": "erledigt",
+          "note": "6 von 176 EANs im Dump gefunden",
+          "updated": "2026-11-21T14:05"
+        },
+        "hersteller": {
+          "status": "erledigt",
+          "note": "vet-concept.com: Analysewerte + Zutaten für 176/176 (44 per EAN, 132 per Produktfamilie gleichen Futtertyps); NfE-Abgleich 82/82 konsistent",
+          "updated": "2026-11-21T15:20"
+        },
+        "gs1": {
+          "status": "offen",
+          "note": "optional, kostenpflichtiges Konto nötig",
+          "updated": "2026-11-21T14:48"
+        }
+      }
+    },
+    "royal-canin": {
+      "brand": "Royal Canin",
+      "sources": {
+        "nfepro": {
+          "status": "erledigt",
+          "note": "Nass- und Trockenfutter: relevance, popular und newest; nach EAN dedupliziert; 493 EANs gesamt",
+          "updated": "2026-11-22T19:10"
+        },
+        "opff": {
+          "status": "erledigt",
+          "note": "119 EANs im OPFF-Dump gefunden, nur leere Felder ergänzt",
+          "updated": "2026-11-21T16:50"
+        },
+        "hersteller": {
+          "status": "erledigt",
+          "note": "royalcanin.com/de: 385 EANs (alle Packungsgrößen) aus 215 Nass-/Trockenfutterseiten; Analyse 381/385, Energie 385/385; Snacks/Ergänzungen/Milchersatz ausgelassen",
+          "updated": "2026-11-21T16:55"
+        },
+        "gs1": {
+          "status": "offen",
+          "note": "optional",
+          "updated": ""
+        }
+      }
+    }
+  }
+}

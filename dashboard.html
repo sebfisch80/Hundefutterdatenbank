@@ -1,0 +1,489 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Hundefutterdatenbank – Dashboard</title>
+<style>
+  :root {
+    --bg: #f4f6f8; --panel: #fff; --txt: #1d2733; --muted: #66727f; --line: #dde3ea;
+    --accent: #2f6f5e; --open: #8a94a0; --open-bg: #eef1f4; --wip: #9a6400; --wip-bg: #fff3dc;
+    --done: #1f7a3d; --done-bg: #e3f5e8;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; font: 14px/1.45 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; color: var(--txt); background: var(--bg); }
+  header { padding: 14px 24px; background: var(--accent); color: #fff; display: flex; align-items: center; gap: 16px; }
+  header h1 { font-size: 18px; margin: 0; }
+  header .meta { margin-left: auto; font-size: 12px; opacity: .85; }
+  header .controls { display: flex; gap: 8px; }
+  header .controls button { font: inherit; font-size: 13px; padding: 6px 12px; border-radius: 6px; border: 1px solid rgba(255,255,255,.5); background: rgba(255,255,255,.12); color: #fff; cursor: pointer; }
+  header .controls button:hover { background: rgba(255,255,255,.22); }
+  header .controls button.dirty { background: #e0a325; border-color: #e0a325; color: #1d2733; font-weight: 600; }
+  button.primary { font: inherit; padding: 8px 18px; border-radius: 6px; border: 0; background: var(--accent); color: #fff; cursor: pointer; font-weight: 600; }
+  [hidden] { display: none !important; }
+  main { display: grid; grid-template-columns: 300px 1fr; gap: 16px; padding: 16px 24px; }
+  .panel { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; }
+  .projects { padding: 8px; align-self: start; }
+  .projects h2, .detail h2 { font-size: 13px; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); margin: 6px 8px 10px; }
+  .project { width: 100%; text-align: left; border: 1px solid transparent; background: none; border-radius: 6px; padding: 10px; cursor: pointer; font: inherit; color: inherit; display: grid; gap: 4px; }
+  .project:hover { background: var(--bg); }
+  .project.active { border-color: var(--accent); background: #eef6f3; }
+  .project .name { font-weight: 600; font-size: 15px; display: flex; justify-content: space-between; gap: 8px; align-items: center; }
+  .project .sub { color: var(--muted); font-size: 12px; }
+  .bar { display: flex; height: 6px; border-radius: 3px; overflow: hidden; background: var(--open-bg); }
+  .bar span { display: block; }
+  .badge { display: inline-flex; align-items: center; gap: 4px; padding: 2px 8px; border-radius: 10px; font-size: 12px; font-weight: 600; white-space: nowrap; }
+  .badge::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
+  .s-offen { color: var(--open); background: var(--open-bg); }
+  .s-in-bearbeitung { color: var(--wip); background: var(--wip-bg); }
+  .s-erledigt { color: var(--done); background: var(--done-bg); }
+  .detail { display: grid; grid-template-columns: minmax(0, 1fr); gap: 16px; align-content: start; min-width: 0; }
+  @media (max-width: 900px) {
+    main { grid-template-columns: minmax(0, 1fr); padding: 12px; }
+    .sources td:nth-child(5), .sources th:nth-child(5) { display: none; }
+  }
+  .card { padding: 16px; }
+  .head { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+  .head h3 { margin: 0; font-size: 20px; }
+  .head .file { color: var(--muted); font-family: ui-monospace, Menlo, monospace; font-size: 12px; }
+  .kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; margin-top: 14px; }
+  .kpi { border: 1px solid var(--line); border-radius: 6px; padding: 10px; }
+  .kpi b { display: block; font-size: 20px; }
+  .kpi span { color: var(--muted); font-size: 12px; }
+  table { border-collapse: collapse; width: 100%; }
+  th, td { text-align: left; padding: 8px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th { font-size: 12px; color: var(--muted); font-weight: 600; background: #fafbfc; position: sticky; top: 0; z-index: 1; }
+  .table-scroll { overflow-x: auto; }
+  .sources td:first-child { font-weight: 600; white-space: nowrap; }
+  .sources select { font: inherit; padding: 4px 6px; border: 1px solid var(--line); border-radius: 4px; }
+  .sources input { width: 100%; font: inherit; padding: 4px 6px; border: 1px solid var(--line); border-radius: 4px; }
+  .muted { color: var(--muted); font-size: 12px; }
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+  .chip { border: 1px solid var(--line); border-radius: 12px; padding: 2px 10px; font-size: 12px; background: #fafbfc; }
+  .toolbar { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-bottom: 10px; }
+  .toolbar input[type=search] { flex: 1; min-width: 200px; padding: 6px 10px; border: 1px solid var(--line); border-radius: 6px; font: inherit; }
+  .toolbar select, .toolbar button { padding: 6px 10px; border: 1px solid var(--line); border-radius: 6px; font: inherit; background: #fff; cursor: pointer; }
+  .preview-wrap { max-height: 60vh; overflow: auto; border: 1px solid var(--line); border-radius: 6px; }
+  .preview td { font-size: 12px; max-width: 360px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .preview td:hover { white-space: normal; }
+  .preview tr:hover td { background: #f7faf9; }
+  .colpicker { display: none; flex-wrap: wrap; gap: 4px 12px; padding: 10px; border: 1px dashed var(--line); border-radius: 6px; margin-bottom: 10px; font-size: 12px; }
+  .colpicker.open { display: flex; }
+  .empty { padding: 40px; text-align: center; color: var(--muted); }
+  .toast { position: fixed; bottom: 16px; right: 16px; background: var(--txt); color: #fff; padding: 8px 14px; border-radius: 6px; opacity: 0; transition: opacity .2s; }
+  .toast.show { opacity: .92; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Hundefutterdatenbank</h1>
+  <span class="meta" id="meta">lädt …</span>
+  <span id="folder-controls" class="controls" hidden>
+    <button id="pick-folder" type="button">Anderen Ordner wählen</button>
+    <button id="save-state" type="button">projects.json speichern</button>
+    <input id="folder-input" type="file" webkitdirectory directory multiple hidden>
+  </span>
+</header>
+<main>
+  <section class="panel projects">
+    <h2>Projekte (Hersteller)</h2>
+    <div id="project-list"></div>
+  </section>
+  <section class="detail" id="detail"><div class="panel empty">Projekt auswählen</div></section>
+</main>
+<div class="toast" id="toast"></div>
+
+<script src="scripts/dashboard-data.js" onerror="window.DASHBOARD_DATA = null"></script>
+<script>
+const STATUSES = ["offen", "in Bearbeitung", "erledigt"];
+const DEFAULT_COLUMNS = ["ean", "product_name", "food_type", "energie_kcal_100g", "rohprotein", "rohfett", "rohfaser", "rohasche", "feuchtigkeit", "source"];
+let projects = [];
+let current = null;
+let preview = { columns: [], rows: [], total: 0 };
+let visibleColumns = null;
+
+const $ = (sel) => document.querySelector(sel);
+const el = (tag, attrs = {}, ...children) => {
+  const node = document.createElement(tag);
+  for (const [k, v] of Object.entries(attrs)) {
+    if (k === "class") node.className = v;
+    else if (k.startsWith("on")) node.addEventListener(k.slice(2), v);
+    else node.setAttribute(k, v);
+  }
+  for (const child of children.flat()) {
+    if (child == null) continue;
+    node.append(child instanceof Node ? child : document.createTextNode(String(child)));
+  }
+  return node;
+};
+const statusClass = (s) => "s-" + s.toLowerCase().replace(/\s+/g, "-");
+const badge = (s) => el("span", { class: "badge " + statusClass(s) }, s);
+const toast = (msg) => { const t = $("#toast"); t.textContent = msg; t.classList.add("show"); setTimeout(() => t.classList.remove("show"), 1800); };
+
+async function api(path, options) {
+  const res = await fetch(path, options);
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || res.statusText);
+  return data;
+}
+
+// ---------- Folder mode (no server): read CSVs + projects.json via folder picker ----------
+const CSV_NAME = /^([a-z0-9][a-z0-9-]*?)-(\d+)\.csv$/;
+const EDITS_KEY = "hundefutterdb.statusEdits";
+const DEFAULT_REGISTRY = [
+  { id: "nfepro", label: "NfE-Pro", url: "https://www.nfepro.de", optional: false },
+  { id: "opff", label: "Open Pet Food Facts", url: "https://world.openpetfoodfacts.org", optional: false },
+  { id: "hersteller", label: "Hersteller-Shop", url: "", optional: false },
+  { id: "gs1", label: "GS1 (EAN-Validierung)", url: "https://www.gs1.org/services/verified-by-gs1", optional: true },
+];
+const folder = { files: {}, state: null, parsed: {} };
+
+function parseCSV(text) {
+  if (text.charCodeAt(0) === 0xfeff) text = text.slice(1);
+  const rows = [];
+  let row = [], field = "", quoted = false;
+  for (let i = 0; i < text.length; i++) {
+    const ch = text[i];
+    if (quoted) {
+      if (ch === '"') {
+        if (text[i + 1] === '"') { field += '"'; i++; } else quoted = false;
+      } else field += ch;
+    } else if (ch === '"') quoted = true;
+    else if (ch === ",") { row.push(field); field = ""; }
+    else if (ch === "\n" || ch === "\r") {
+      if (ch === "\r" && text[i + 1] === "\n") i++;
+      row.push(field); field = "";
+      if (row.length > 1 || row[0] !== "") rows.push(row);
+      row = [];
+    } else field += ch;
+  }
+  if (field !== "" || row.length) { row.push(field); rows.push(row); }
+  const columns = rows.shift() || [];
+  return { columns, rows: rows.map(r => Object.fromEntries(columns.map((c, i) => [c, r[i] ?? ""]))) };
+}
+
+const loadEdits = () => { try { return JSON.parse(localStorage.getItem(EDITS_KEY)) || {}; } catch { return {}; } };
+const saveEdits = (edits) => localStorage.setItem(EDITS_KEY, JSON.stringify(edits));
+
+function mergedState() {
+  const base = folder.state || { sources: DEFAULT_REGISTRY, projects: {} };
+  const state = JSON.parse(JSON.stringify(base));
+  state.sources = state.sources || DEFAULT_REGISTRY;
+  state.projects = state.projects || {};
+  for (const [slug, sources] of Object.entries(loadEdits())) {
+    const project = state.projects[slug] ||= { brand: "", sources: {} };
+    project.sources ||= {};
+    for (const [id, edit] of Object.entries(sources)) {
+      const fileEntry = project.sources[id];
+      if (!fileEntry || (edit.updated || "") > (fileEntry.updated || "")) project.sources[id] = edit;
+    }
+  }
+  return state;
+}
+
+function unsavedCount() {
+  const base = (folder.state && folder.state.projects) || {};
+  let n = 0;
+  for (const [slug, sources] of Object.entries(loadEdits()))
+    for (const [id, edit] of Object.entries(sources)) {
+      const f = base[slug] && base[slug].sources && base[slug].sources[id];
+      if (!f || (edit.updated || "") > (f.updated || "")) n++;
+    }
+  return n;
+}
+
+function overallStatus(sourceStates, registry) {
+  const relevant = registry.filter(s => !s.optional).map(s => (sourceStates[s.id] || {}).status || "offen");
+  if (relevant.length && relevant.every(s => s === "erledigt")) return "erledigt";
+  if (relevant.some(s => s === "in Bearbeitung" || s === "erledigt")) return "in Bearbeitung";
+  return "offen";
+}
+
+function summarizeLocal(slug, file, parsed, state) {
+  const { columns, rows } = parsed;
+  const entry = state.projects[slug] || {};
+  const sourceStates = entry.sources || {};
+  const nutrientCols = ["rohprotein", "rohfett", "rohfaser", "rohasche"].filter(c => columns.includes(c));
+  const foodTypes = {}, rowSources = {};
+  let withAnalysis = 0;
+  for (const r of rows) {
+    const t = r.food_type || "unbekannt";
+    foodTypes[t] = (foodTypes[t] || 0) + 1;
+    if (nutrientCols.some(c => (r[c] || "").trim())) withAnalysis++;
+    for (const token of (r.source || "").split(";")) {
+      const label = token.replace(/\s*\(.*?\)\s*$/, "").trim();
+      if (label) rowSources[label] = (rowSources[label] || 0) + 1;
+    }
+  }
+  const d = new Date(file.lastModified);
+  const pad = (n) => String(n).padStart(2, "0");
+  return {
+    slug,
+    brand: entry.brand || slug.split("-").map(w => w[0].toUpperCase() + w.slice(1)).join("-"),
+    file: file.name,
+    rows: rows.length,
+    columns: columns.length,
+    with_analysis: withAnalysis,
+    food_types: foodTypes,
+    row_sources: rowSources,
+    modified: `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`,
+    overall: overallStatus(sourceStates, state.sources),
+    sources: state.sources.map(src => ({
+      ...src,
+      status: (sourceStates[src.id] || {}).status || "offen",
+      note: (sourceStates[src.id] || {}).note || "",
+      updated: (sourceStates[src.id] || {}).updated || "",
+    })),
+  };
+}
+
+async function readFolder(fileList) {
+  const files = {}, parsed = {};
+  let state = null;
+  for (const file of fileList) {
+    const parts = (file.webkitRelativePath || file.name).split("/");
+    if (parts.length > 2) continue;
+    if (file.name === "projects.json") {
+      try { state = JSON.parse(await file.text()); } catch { toast("projects.json ist fehlerhaft – Standardwerte verwendet"); }
+      continue;
+    }
+    const m = CSV_NAME.exec(file.name);
+    if (m) files[m[1]] = file;
+  }
+  for (const [slug, file] of Object.entries(files)) parsed[slug] = parseCSV(await file.text());
+  folder.files = files; folder.parsed = parsed; folder.state = state;
+}
+
+function downloadState() {
+  const state = mergedState();
+  const blob = new Blob([JSON.stringify(state, null, 2) + "\n"], { type: "application/json" });
+  const a = el("a", { href: URL.createObjectURL(blob), download: "projects.json" });
+  document.body.append(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+  folder.state = state;
+  updateSaveButton();
+  toast("projects.json heruntergeladen – bitte in den Projektordner verschieben");
+}
+
+function updateSaveButton() {
+  const btn = $("#save-state");
+  if (!btn) return;
+  const n = unsavedCount();
+  btn.textContent = n ? `projects.json speichern (${n})` : "projects.json speichern";
+  btn.classList.toggle("dirty", n > 0);
+}
+
+// ---------- Backends ----------
+const backend = {
+  mode: location.protocol === "file:" ? "folder" : "server",
+  async list() {
+    if (this.mode === "server") return api("/api/projects");
+    const state = mergedState();
+    return Object.keys(folder.files).sort().map(slug => summarizeLocal(slug, folder.files[slug], folder.parsed[slug], state));
+  },
+  async rows(slug) {
+    if (this.mode === "server") return api(`/api/projects/${encodeURIComponent(slug)}/rows`);
+    const { columns, rows } = folder.parsed[slug];
+    return { columns, rows, total: rows.length, truncated: false };
+  },
+  async update(slug, sourceId, status, note) {
+    if (this.mode === "server")
+      return api(`/api/projects/${encodeURIComponent(slug)}/sources/${encodeURIComponent(sourceId)}`, {
+        method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ status, note }),
+      });
+    const pad = (n) => String(n).padStart(2, "0");
+    const d = new Date();
+    const updated = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+    const edits = loadEdits();
+    (edits[slug] ||= {})[sourceId] = { status, note: String(note).slice(0, 500), updated };
+    saveEdits(edits);
+    updateSaveButton();
+    return summarizeLocal(slug, folder.files[slug], folder.parsed[slug], mergedState());
+  },
+};
+
+async function loadProjects(keepSelection = true) {
+  projects = await backend.list();
+  const source = backend.mode === "folder" ? (folder.origin || "Ordner eingelesen") : "Server";
+  $("#meta").textContent = `${projects.length} Projekt(e) · ${source}`;
+  if (!projects.length) {
+    current = null;
+    renderList();
+    $("#detail").replaceChildren(el("div", { class: "panel empty" }, "Keine CSV-Dateien im Format <marke>-<anzahl>.csv gefunden."));
+    return;
+  }
+  const previous = current;
+  const target = (keepSelection && previous && projects.find(p => p.slug === previous.slug)) || projects[0];
+  const changed = !previous || previous.slug !== target.slug || previous.file !== target.file || previous.modified !== target.modified;
+  if (changed) {
+    await selectProject(target.slug, true);
+  } else {
+    current = target;
+    renderList();
+  }
+}
+
+function progressBar(p) {
+  const counts = { offen: 0, "in Bearbeitung": 0, erledigt: 0 };
+  p.sources.filter(s => !s.optional).forEach(s => counts[s.status]++);
+  const total = Object.values(counts).reduce((a, b) => a + b, 0) || 1;
+  return el("div", { class: "bar", title: `${counts.erledigt} erledigt, ${counts["in Bearbeitung"]} in Bearbeitung, ${counts.offen} offen` },
+    el("span", { style: `width:${counts.erledigt / total * 100}%;background:var(--done)` }),
+    el("span", { style: `width:${counts["in Bearbeitung"] / total * 100}%;background:#e0a325` }));
+}
+
+function renderList() {
+  $("#project-list").replaceChildren(...projects.map(p =>
+    el("button", { class: "project" + (current && current.slug === p.slug ? " active" : ""), onclick: () => selectProject(p.slug, true) },
+      el("div", { class: "name" }, p.brand, badge(p.overall)),
+      el("div", { class: "sub" }, `${p.rows} Produkte · ${p.file}`),
+      progressBar(p))));
+}
+
+async function selectProject(slug, reloadRows) {
+  current = projects.find(p => p.slug === slug);
+  renderList();
+  if (reloadRows) {
+    preview = await backend.rows(slug);
+    visibleColumns = DEFAULT_COLUMNS.filter(c => preview.columns.includes(c));
+    if (!visibleColumns.length) visibleColumns = preview.columns.slice(0, 8);
+  }
+  renderDetail();
+}
+
+async function updateSource(sourceId, status, note) {
+  try {
+    const updated = await backend.update(current.slug, sourceId, status, note);
+    projects = projects.map(p => p.slug === updated.slug ? updated : p);
+    current = updated;
+    renderList();
+    renderDetail();
+    toast("Gespeichert");
+  } catch (err) { toast("Fehler: " + err.message); }
+}
+
+function renderSources(p) {
+  const rows = p.sources.map(s => {
+    const select = el("select", { "aria-label": `Status ${s.label}` }, STATUSES.map(st => {
+      const o = el("option", { value: st }, st); if (st === s.status) o.selected = true; return o;
+    }));
+    const note = el("input", { type: "text", value: s.note, placeholder: "Notiz", "aria-label": `Notiz ${s.label}` });
+    select.addEventListener("change", () => updateSource(s.id, select.value, note.value));
+    note.addEventListener("change", () => updateSource(s.id, select.value, note.value));
+    return el("tr", {},
+      el("td", {}, s.label, s.optional ? el("div", { class: "muted" }, "optional") : null),
+      el("td", {}, badge(s.status)),
+      el("td", {}, select),
+      el("td", { style: "width:45%" }, note),
+      el("td", { class: "muted" }, s.updated ? s.updated.replace("T", " ") : "–"));
+  });
+  return el("div", { class: "panel card" },
+    el("h2", {}, "Quellen & Extraktionszustand"),
+    el("div", { class: "table-scroll" }, el("table", { class: "sources" },
+      el("thead", {}, el("tr", {}, ["Quelle", "Status", "ändern", "Notiz", "aktualisiert"].map(h => el("th", {}, h)))),
+      el("tbody", {}, rows))),
+    el("div", { class: "muted", style: "margin-top:8px" }, "Gesamtzustand: alle Pflichtquellen erledigt → erledigt; mindestens eine begonnen → in Bearbeitung."));
+}
+
+function renderPreview() {
+  const search = el("input", { type: "search", placeholder: "Suche in allen Spalten (Name, EAN, …)" });
+  const types = [...new Set(preview.rows.map(r => r.food_type || "unbekannt"))].sort();
+  const typeFilter = el("select", {}, el("option", { value: "" }, "Alle Futtertypen"), types.map(t => el("option", { value: t }, t)));
+  const picker = el("div", { class: "colpicker" }, preview.columns.map(c => {
+    const cb = el("input", { type: "checkbox" }); cb.checked = visibleColumns.includes(c);
+    cb.addEventListener("change", () => {
+      visibleColumns = preview.columns.filter(col => col === c ? cb.checked : visibleColumns.includes(col));
+      draw();
+    });
+    return el("label", {}, cb, " ", c);
+  }));
+  const colBtn = el("button", { onclick: () => picker.classList.toggle("open") }, "Spalten");
+  const count = el("span", { class: "muted" });
+  const wrap = el("div", { class: "preview-wrap" });
+
+  function draw() {
+    const q = search.value.trim().toLowerCase();
+    const t = typeFilter.value;
+    const filtered = preview.rows.filter(r =>
+      (!t || (r.food_type || "unbekannt") === t) &&
+      (!q || preview.columns.some(c => String(r[c] ?? "").toLowerCase().includes(q))));
+    count.textContent = `${filtered.length} von ${preview.total} Zeilen` + (preview.truncated ? " (Vorschau gekürzt)" : "");
+    wrap.replaceChildren(el("table", { class: "preview" },
+      el("thead", {}, el("tr", {}, visibleColumns.map(c => el("th", {}, c)))),
+      el("tbody", {}, filtered.map(r => el("tr", {}, visibleColumns.map(c => el("td", { title: r[c] ?? "" }, r[c] ?? "")))))));
+  }
+  search.addEventListener("input", draw);
+  typeFilter.addEventListener("change", draw);
+  draw();
+
+  return el("div", { class: "panel card" },
+    el("h2", {}, "CSV-Vorschau"),
+    el("div", { class: "toolbar" }, search, typeFilter, colBtn, count),
+    picker, wrap);
+}
+
+function renderDetail() {
+  const p = current;
+  const kpi = (value, label) => el("div", { class: "kpi" }, el("b", {}, value), el("span", {}, label));
+  const header = el("div", { class: "panel card" },
+    el("div", { class: "head" }, el("h3", {}, p.brand), badge(p.overall), el("span", { class: "file" }, p.file)),
+    el("div", { class: "kpis" },
+      kpi(p.rows, "Produkte (EANs)"),
+      ...Object.entries(p.food_types).map(([k, v]) => kpi(v, k)),
+      kpi(`${p.with_analysis} / ${p.rows}`, "mit Analysewerten"),
+      kpi(p.modified.replace("T", " "), "CSV zuletzt geändert")),
+    el("div", { class: "chips" }, el("span", { class: "muted" }, "Zeilen je Quelle:"),
+      Object.entries(p.row_sources).map(([k, v]) => el("span", { class: "chip" }, `${k}: ${v}`))));
+  $("#detail").replaceChildren(header, renderSources(p), renderPreview());
+}
+
+function loadBundledData(data) {
+  const files = {}, parsed = {};
+  for (const [slug, entry] of Object.entries(data.files || {})) {
+    files[slug] = { name: entry.name, lastModified: entry.lastModified };
+    parsed[slug] = parseCSV(entry.text);
+  }
+  folder.files = files; folder.parsed = parsed; folder.state = data.state || null;
+  folder.origin = `Ordner des Dashboards (Stand ${String(data.generated || "").replace("T", " ")})`;
+}
+
+function folderIntro() {
+  current = null; projects = [];
+  renderList();
+  $("#meta").textContent = "kein Ordner eingelesen";
+  $("#detail").replaceChildren(el("div", { class: "panel empty" },
+    el("p", {}, "Wähle den Ordner „Hundefutterdatenbank“ aus. Alle Dateien im Format <marke>-<anzahl>.csv werden als Projekte angezeigt."),
+    el("p", {}, el("button", { class: "primary", onclick: () => $("#folder-input").click() }, "Ordner wählen")),
+    el("p", { class: "muted" }, "Die Daten bleiben auf deinem Rechner. Statusänderungen speichert der Browser; mit „projects.json speichern“ lädst du sie als Datei herunter und legst sie in den Projektordner.")));
+}
+
+if (backend.mode === "folder") {
+  $("#folder-controls").hidden = false;
+  $("#folder-input").addEventListener("change", async (event) => {
+    if (!event.target.files.length) return;
+    try {
+      await readFolder(event.target.files);
+      folder.origin = "manuell gewählter Ordner";
+      current = null;
+      updateSaveButton();
+      await loadProjects(false);
+      toast(`${Object.keys(folder.files).length} Projekt(e) eingelesen`);
+    } catch (err) { toast("Fehler beim Einlesen: " + err.message); }
+    event.target.value = "";
+  });
+  $("#pick-folder").addEventListener("click", () => $("#folder-input").click());
+  $("#save-state").addEventListener("click", downloadState);
+  if (window.DASHBOARD_DATA && Object.keys(window.DASHBOARD_DATA.files || {}).length) {
+    loadBundledData(window.DASHBOARD_DATA);
+    updateSaveButton();
+    loadProjects(false).catch(err => toast("Fehler: " + err.message));
+  } else {
+    folderIntro();
+  }
+} else {
+  loadProjects(false).catch(err => { $("#detail").replaceChildren(el("div", { class: "panel empty" }, "Server nicht erreichbar: " + err.message)); });
+  setInterval(() => loadProjects(true).catch(() => {}), 30000);
+}
+</script>
+</body>
+</html>
